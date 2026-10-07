@@ -1,26 +1,411 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ═══════════════════════════════════════════════════════════════════════════
+   THEME TOKENS — Tailwind utilities resolve these through the runtime CSS
+   variables below, so switching <html data-dimension> re-themes the whole
+   site (including shaders, which read the same vars via getComputedStyle).
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-void: var(--void);
+  --color-panel: var(--panel);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ── Dimension: GRAPHITE (default) — neutral monochrome ──────────────────── */
+:root,
+html[data-dimension="graphite"] {
+  --void: #09090b;
+  --panel: #101013cc;
+  --panel-solid: #101013;
+  --ink: #f4f4f5;
+  --muted: #a1a1aa;
+  --faint: #62626b;
+  --line: rgba(255, 255, 255, 0.1);
+  --accent: #ececea;
+  --accent-2: #9c9ca3;
+  --accent-soft: rgba(255, 255, 255, 0.08);
+  --glow: rgba(236, 236, 234, 0.32);
+}
+
+/* ── Dimension: BONE — warm monochrome ───────────────────────────────────── */
+html[data-dimension="bone"] {
+  --void: #0b0a08;
+  --panel: #14120fcc;
+  --panel-solid: #14120f;
+  --ink: #f5f2ea;
+  --muted: #a8a192;
+  --faint: #6b6558;
+  --line: rgba(235, 225, 205, 0.1);
+  --accent: #e6e1d5;
+  --accent-2: #b3a892;
+  --accent-soft: rgba(230, 225, 213, 0.08);
+  --glow: rgba(230, 225, 213, 0.3);
+}
+
+/* ── Dimension: SLATE — cool monochrome ──────────────────────────────────── */
+html[data-dimension="slate"] {
+  --void: #08090b;
+  --panel: #0f1114cc;
+  --panel-solid: #0f1114;
+  --ink: #f2f4f7;
+  --muted: #9aa3ad;
+  --faint: #5d646d;
+  --line: rgba(210, 220, 235, 0.1);
+  --accent: #dfe5ec;
+  --accent-2: #8fa0b3;
+  --accent-soft: rgba(223, 229, 236, 0.08);
+  --glow: rgba(223, 229, 236, 0.3);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BASE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+html {
+  scroll-behavior: smooth;
+  background: var(--void);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--void);
+  color: var(--ink);
+  overflow-x: clip;
+  /* Dimension-reactive ambience: two fixed radial glows. */
+  background-image:
+    radial-gradient(52rem 30rem at 82% -8%, var(--accent-soft), transparent 65%),
+    radial-gradient(44rem 28rem at 8% 108%, var(--accent-soft), transparent 65%);
+  background-attachment: fixed;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--void);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-soft) transparent;
+}
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-thumb { background: var(--accent-soft); border-radius: 99px; }
+*::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+section[id] { scroll-margin-top: 24px; }
+
+/* Custom spatial cursor: hide the native one on fine pointers (keep text
+   carets on form fields). The class is set by <SpatialCursor/> on mount. */
+@media (pointer: fine) {
+  html.spatial-cursor,
+  html.spatial-cursor * {
+    cursor: none !important;
+  }
+  html.spatial-cursor :is(input, textarea) {
+    cursor: text !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   UTILITIES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@utility glass {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(18px) saturate(1.35);
+  -webkit-backdrop-filter: blur(18px) saturate(1.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 18px 50px rgba(0, 0, 0, 0.45);
+}
+
+@utility text-glow {
+  text-shadow:
+    0 0 14px var(--glow),
+    0 0 44px var(--accent-soft);
+}
+
+@utility accent-gradient {
+  /* background-image (not the shorthand) so bg-clip-text survives */
+  background-image: linear-gradient(115deg, var(--accent) 10%, var(--accent-2) 90%);
+}
+
+@utility mono-label {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+/* ── Film-grain overlay ──────────────────────────────────────────────────── */
+.noise-overlay {
+  position: fixed;
+  inset: -50%;
+  z-index: 90;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── Blueprint grid backdrop ─────────────────────────────────────────────── */
+.grid-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: radial-gradient(75rem 45rem at 50% 8%, black 15%, transparent 78%);
+  -webkit-mask-image: radial-gradient(75rem 45rem at 50% 8%, black 15%, transparent 78%);
+  opacity: 0.5;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPONENTS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Status pulse dot ────────────────────────────────────────────────────── */
+.status-dot {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-2);
+  box-shadow: 0 0 10px var(--glow);
+}
+.status-dot::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1px solid var(--accent-2);
+  animation: ping-ring 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* ── Glitch text (pseudo layers) ─────────────────────────────────────────── */
+.glitch {
+  position: relative;
+  display: inline-block;
+}
+.glitch::before,
+.glitch::after {
+  /* "/ ''" keeps the pseudo text out of the accessibility tree */
+  content: attr(data-text) / "";
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.glitch::before { color: var(--accent-2); z-index: -1; }
+.glitch::after { color: var(--accent); z-index: -2; }
+.glitch.glitching::before {
+  opacity: 0.85;
+  animation: glitch-a 0.32s steps(2, jump-none) both;
+}
+.glitch.glitching::after {
+  opacity: 0.85;
+  animation: glitch-b 0.32s steps(2, jump-none) both;
+}
+
+/* ── Radar (Engine Room) ─────────────────────────────────────────────────── */
+.radar-sweep {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    var(--accent-soft) 0deg,
+    transparent 55deg,
+    transparent 360deg
+  );
+  animation: radar-spin 7s linear infinite;
+}
+.radar-ring {
+  position: absolute;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+}
+
+/* ── Device preview screens ──────────────────────────────────────────────── */
+.device-screen {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 15% 12%, var(--accent-soft), transparent 55%),
+    radial-gradient(110% 100% at 85% 90%, var(--accent-soft), transparent 55%),
+    var(--panel-solid);
+}
+.device-screen::before {
+  content: "";
+  position: absolute;
+  inset: -60%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    var(--accent-soft) 80deg,
+    transparent 160deg,
+    var(--accent-soft) 250deg,
+    transparent 320deg
+  );
+  animation: radar-spin 9s linear infinite;
+  filter: blur(26px);
+  opacity: 0.7;
+}
+.device-screen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(transparent 50%, rgba(0, 0, 0, 0.18) 50%);
+  background-size: 100% 3px;
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* ── Terminal scanlines ──────────────────────────────────────────────────── */
+.crt-scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0 2px,
+    rgba(255, 255, 255, 0.018) 2px 4px
+  );
+}
+
+/* ── Terminal caret ──────────────────────────────────────────────────────── */
+.term-caret {
+  display: inline-block;
+  width: 9px;
+  height: 1.1em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--glow);
+  animation: caret-blink 1.05s steps(1) infinite;
+}
+
+/* ── Contact field underline ─────────────────────────────────────────────── */
+.field-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--line);
+}
+.field-line::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.field:focus-within .field-line::before,
+.field.filled .field-line::before {
+  transform: scaleX(1);
+}
+
+/* ── Timeline rail head ──────────────────────────────────────────────────── */
+.rail-head {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 14px;
+  height: 14px;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 18px var(--glow), 0 0 42px var(--accent-soft);
+}
+
+/* ── Timeline milestone dots ─────────────────────────────────────────────── */
+.m-dot {
+  border: 1px solid var(--line);
+  background: var(--panel-solid);
+  transition: background 0.4s, box-shadow 0.4s, border-color 0.4s;
+}
+.m-dot.lit {
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: 0 0 16px var(--glow);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   KEYFRAMES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@keyframes ping-ring {
+  0% { transform: scale(0.6); opacity: 0.9; }
+  80%, 100% { transform: scale(2.4); opacity: 0; }
+}
+
+@keyframes radar-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes caret-blink {
+  0%, 55% { opacity: 1; }
+  56%, 100% { opacity: 0; }
+}
+
+@keyframes glitch-a {
+  0% { transform: translate(2px, -2px); clip-path: inset(0 0 62% 0); }
+  40% { transform: translate(-3px, 1px); clip-path: inset(38% 0 20% 0); }
+  80%, 100% { transform: translate(1px, 2px); clip-path: inset(70% 0 0 0); opacity: 0; }
+}
+
+@keyframes glitch-b {
+  0% { transform: translate(-2px, 2px); clip-path: inset(55% 0 0 0); }
+  40% { transform: translate(3px, -1px); clip-path: inset(10% 0 55% 0); }
+  80%, 100% { transform: translate(-1px, -2px); clip-path: inset(0 0 75% 0); opacity: 0; }
+}
+
+@keyframes float-y {
+  0%, 100% { transform: translateY(-6px); }
+  50% { transform: translateY(8px); }
+}
+
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOTION SAFETY
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
